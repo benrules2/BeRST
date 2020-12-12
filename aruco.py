@@ -1,14 +1,14 @@
 import sys
 import threading as th
 from datetime import datetime
-import logging
+import log
 import argparse
 
 import matplotlib.pyplot as plt
 import cv2
+import cv_utils as utils
 from cv2 import aruco
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
 class InteruptableCapture:
@@ -24,7 +24,7 @@ class InteruptableCapture:
 
     def capture(self, cap, writer, count):
         th.Thread(target=self.key_capture_thread, args=(), name='key_capture_thread', daemon=True).start()
-        logging.info("Press enter to terminate capture")
+        log.info("Press enter to terminate capture")
         while self.keep_going:
             if not cap.isOpened():
                 return False
@@ -44,18 +44,15 @@ def gen_marker(filename="marker", id=0):
     img = aruco.drawMarker(aruco_dict, id, 4*4*10)
     cv2.imwrite(output, img)
 
-def read_marker(image_file):
+def read_marker(image_file, display_duration=5000):
     frame  =  cv2.imread(image_file)
     corners, ids, rejectedImgPoints = look_for_marker(frame)
-    frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
-
-    plt.figure()
-    plt.imshow(frame_markers)
-    for i in range(len(ids)):
-        c = corners[i][0]
-        plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
-    plt.legend()
-    plt.show()
+    image = frame.copy()
+    image = utils.draw_markers(image.copy(), corners, ids)
+    plt.imshow(image)
+    cv2.imwrite(image_file.split(".")[0]+'marked.jpg', image)
+    cv2.imshow("image", image)
+    cv2.waitKey(display_duration)
 
 def look_for_marker(image, frame_number=0, writer=None):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -64,9 +61,9 @@ def look_for_marker(image, frame_number=0, writer=None):
 
     if ids is not None:
         for id in ids:
-            logging.info("Detected id {} at frame {} time {}".format(id, frame_number, getCurrentTime()))
+            log.info("Detected id {} at frame {} time {}".format(id, frame_number, getCurrentTime()))
         if writer:
-            image = aruco.drawDetectedMarkers(image.copy(), corners, ids)
+            image = utils.draw_markers(image.copy(), corners, ids)
     
     if writer:
         writer.write(image.copy().astype('uint8'))
@@ -77,7 +74,7 @@ def get_time_from_video(filename=None, annotated_file=None, data_file=None):
     cap = cv2.VideoCapture(filename)
     streaming = False
     if filename is None:
-        logging.info("No filename selected, attempting to stream webcam")
+        log.info("No filename selected, attempting to stream webcam")
         cap = cv2.VideoCapture(0)
         stream = True
 
@@ -85,18 +82,18 @@ def get_time_from_video(filename=None, annotated_file=None, data_file=None):
         ret,frame = cap.read()
         height, width, channels = frame.shape
         writer = cv2.VideoWriter(annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
-        logging.info("Writing to {}".format(annotated_file))
+        log.info("Writing to {}".format(annotated_file))
     count = 0
     capture_loop = InteruptableCapture(loop = lambda cap, writer, count : capture_next_frame(cap, writer, count))
     capture_loop.capture(cap, writer, count)
-    logging.info("Cleaning up writer and capture")
+    log.info("Cleaning up writer and capture")
     writer.release()
     cap.release()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Track your pets.')
-    parser.add_argument('--generate', help='sum the integers (default: find the max)')
+    parser.add_argument('--generate')
     parser.add_argument('--type', help = "Track from video")
     parser.add_argument('-f', help = "Filename to track")
     args = parser.parse_args()

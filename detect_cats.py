@@ -2,10 +2,8 @@
 
 import aruco as cv
 import argparse
-import logging
+import log
 import sys
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotated_img='.jpg'):
     image_extention = annotated
@@ -19,7 +17,6 @@ def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotat
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Track your pets.')
-    parser.add_argument('--generate', help='sum the integers (default: find the max)')
     parser.add_argument('-v', action='store_true', default=False)
     parser.add_argument('-i', action='store_true', default=False)
     parser.add_argument('--stream', action='store_true', default=True)
@@ -30,24 +27,24 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if (args.i or args.v) and args.f == None:
-        logging.error("Video or image mode selected (-i / -v) but no file provided. Please select a file '-f'")
+        log.error("Video or image mode selected (-i / -v) but no file provided. Please select a file '-f'")
         pass
     
     outfile_data, outfile_annotated = get_output_filename(args)   
 
     if args.annotate:
-        logging.info("Writting detections to {} and data to {}".format(outfile_annotated, outfile_data))
+        log.info("Writting detections to {} and data to {}".format(outfile_annotated, outfile_data))
     else:
-        logging.info("No annotation selected (optimize speed). Writting data to {}".format(outfile_data))
+        log.info("No annotation selected (optimize speed). Writting data to {}".format(outfile_data))
 
     if args.i:
-        logging.info("Image mode selected. Looking for markers in {}".format(args.f))
+        log.info("Image mode selected. Looking for markers in {}".format(args.f))
         cv.read_marker(args.f)
 
     elif args.v:
-        logging.info("Video mode selected. Looking for markers in {}".format(args.f))
+        log.info("Video mode selected. Looking for markers in {}".format(args.f))
         cv.get_time_from_video(filename=args.f, annotated_file=outfile_annotated, data_file=outfile_data)
         
     elif args.stream:
-        logging.info("Streaming mode selected, using computer webcam.")
+        log.info("Streaming mode selected, using computer webcam.")
         cv.get_time_from_video(filename=args.f, annotated_file=outfile_annotated, data_file=outfile_data)
