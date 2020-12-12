@@ -1,12 +1,38 @@
-import cv2
-from cv2 import aruco
 import sys
-import matplotlib.pyplot as plt
+import threading as th
 from datetime import datetime
-
+import logging
 import argparse
 
+import matplotlib.pyplot as plt
+import cv2
+from cv2 import aruco
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
+
+class InteruptableCapture:
+    def __init__(self, loop, interupt_key='enter'):
+        self.keep_going = True
+        self.loop = loop
+        self.interupt_key = interupt_key
+
+    def key_capture_thread(self):
+         while self.keep_going:
+            key = input()
+            self.keep_going = False   
+
+    def capture(self, cap, writer, count):
+        th.Thread(target=self.key_capture_thread, args=(), name='key_capture_thread', daemon=True).start()
+        logging.info("Press enter to terminate capture")
+        while self.keep_going:
+            if not cap.isOpened():
+                return False
+            ret,frame = cap.read()
+            if frame is None:
+                return False
+            look_for_marker(frame, count, writer=writer)
+            count = count + 1
 
 def getCurrentTime():
     now = datetime.now()
@@ -20,7 +46,6 @@ def gen_marker(filename="marker", id=0):
 
 def read_marker(image_file):
     frame  =  cv2.imread(image_file)
-
     corners, ids, rejectedImgPoints = look_for_marker(frame)
     frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 
@@ -39,39 +64,34 @@ def look_for_marker(image, frame_number=0, writer=None):
 
     if ids is not None:
         for id in ids:
-            print("Detected id {} at frame {} time {}".format(id, frame_number, getCurrentTime()))
-        if writer is not None:
-            frame_markers = aruco.drawDetectedMarkers(image.copy(), corners, ids)
-            writer.write(frame_markers.astype('uint8'))
-    elif writer is not None:
+            logging.info("Detected id {} at frame {} time {}".format(id, frame_number, getCurrentTime()))
+        if writer:
+            image = aruco.drawDetectedMarkers(image.copy(), corners, ids)
+    
+    if writer:
         writer.write(image.copy().astype('uint8'))
 
     return corners, ids, rejectedImgPoints
 
-
-def get_time_from_video(filename):
+def get_time_from_video(filename=None, annotated_file=None, data_file=None):
     cap = cv2.VideoCapture(filename)
-    ret,frame = cap.read()
+    streaming = False
+    if filename is None:
+        logging.info("No filename selected, attempting to stream webcam")
+        cap = cv2.VideoCapture(0)
+        stream = True
 
-    height, width, channels = frame.shape 
-
-    new_file = filename.split(".")[0] + "_marked.avi"
-    writer = cv2.VideoWriter(new_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
-
-    print("Writing to {}".format(new_file))
-
-    count = 0
-    while cap.isOpened():
+    if annotated_file is not None:
         ret,frame = cap.read()
-        if cv2.waitKey(10) & 0xFF == ord('q') or frame is None:
-            break
-        cv2.imshow('window-name', frame)
-        look_for_marker(frame, count, writer=writer)
-        count = count + 1
-
+        height, width, channels = frame.shape
+        writer = cv2.VideoWriter(annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
+        logging.info("Writing to {}".format(annotated_file))
+    count = 0
+    capture_loop = InteruptableCapture(loop = lambda cap, writer, count : capture_next_frame(cap, writer, count))
+    capture_loop.capture(cap, writer, count)
+    logging.info("Cleaning up writer and capture")
     writer.release()
     cap.release()
-    cv2.destroyAllWindows() # destroy all opened windows
 
 
 if __name__ == "__main__":
