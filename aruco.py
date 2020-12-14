@@ -31,7 +31,7 @@ class InteruptableCapture:
                 tag_detector.look_for_marker(next_frame)
 
 class TagDetector:
-    def __init__(self, input_file=None, annotated_file=None, data_file=None, stream=False, preview=True):
+    def __init__(self, input_file=None, annotated_file=None, data_file=None, stream=False, preview=False):
         self.count = 0
         self.input_file = input_file
         self.annotated_file = annotated_file
@@ -80,6 +80,7 @@ class TagDetector:
 
         if self.preview:
             cv2.imshow("preview", image)
+            cv2.waitKey(10)
 
         return corners, ids, rejectedImgPoints
 
