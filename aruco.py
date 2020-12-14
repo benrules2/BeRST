@@ -4,7 +4,6 @@ from datetime import datetime
 import log
 import argparse
 
-import matplotlib.pyplot as plt
 import cv2
 import cv_utils as utils
 from cv2 import aruco
@@ -49,7 +48,6 @@ class TagDetector:
         frame  =  cv2.imread(self.input_file)
         corners, ids, rejectedImgPoints = self.look_for_marker(frame)
         image = utils.draw_markers(frame, corners, ids)
-        plt.imshow(image)
         cv2.imwrite(self.input_file.split(".")[0]+'marked.jpg', image)
         cv2.imshow("image", image)
         cv2.waitKey(display_duration)
@@ -115,7 +113,6 @@ def getCurrentTime():
     return now.strftime("%d/%m/%Y %H:%M:%S")
 
 def gen_marker(filename="marker", id=0):
-    fig = plt.figure()
     output = "_markers/{}_{}.jpg".format(filename, id)
     img = aruco.drawMarker(aruco_dict, id, 4*4*10)
     cv2.imwrite(output, img)
