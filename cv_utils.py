@@ -2,6 +2,9 @@ import cv2
 import log
 import random
 
+def get_corner_midpoint(corners):
+    return (corners[:, 0].mean(), corners[:, 1].mean())
+
 def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
     corners = corners[0]
     if len(corners) < 4:
@@ -14,7 +17,7 @@ def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
     cv2.line(image, tuple(corners[2]), tuple(corners[3]), colour, thickness)
     cv2.line(image, tuple(corners[3]), tuple(corners[0]), colour, thickness)
 
-    label_loc = (corners[:, 0].mean(), corners[:, 1].mean())
+    label_loc = get_corner_midpoint(corners)
 
     cv2.putText(image,"id = {}".format(id), label_loc, cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 5, cv2.LINE_4)
     return image

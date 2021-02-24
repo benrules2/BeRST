@@ -67,9 +67,10 @@ class TagDetector:
 
         if ids is not None:
             if self.data_file:
-                for id in ids:
-                    log.info("Detected id {} at frame {} time {}".format(id, self.count, getCurrentTime()))
-                    self.data_file.write("{},{},{}\n".format(id, self.count, getCurrentTime()))
+                for idx, id in enumerate(ids):
+                    midpoint = utils.get_corner_midpoint(corners[idx])
+                    log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
+                    self.data_file.write("{},{},{},{},{}\n".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
             if self.writer:
                 image = utils.draw_markers(image.copy(), corners, ids)
         
