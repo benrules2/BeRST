@@ -61,9 +61,12 @@ class TagDetector:
         print(self.roi_list[0][3])
 
     def _check_marker_in_roi(self, midpoint):
+
+        # to judge a point(x0,y0) is in the rectangle, just to check if a < x0 < a+c and b < y0 < b + d
+        # ROI is top left coordinate, and width and height
         for roi in self.roi_list:
-            x_inside = midpoint[0] <= roi[2] and midpoint[0] >= roi[0]
-            y_inside = midpoint[1] <= roi[3] and midpoint[1] >= roi[1]
+            x_inside = midpoint[0] >= roi[0] and midpoint[0] <= roi[0] + roi[2]
+            y_inside = midpoint[1] >= roi[1] and midpoint[1] <= roi[0] + roi[3]
 
             if x_inside and y_inside:
                 return True
@@ -100,8 +103,9 @@ class TagDetector:
                 for idx, id in enumerate(ids):
                     midpoint = utils.get_corner_midpoint(corners[idx])
                     if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
-                        log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, self.frame_rate * self.count, midpoint[0], midpoint[1]))
-                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
+                        timestamp = float(self.count / self.frame_rate)
+                        log.info("Detected id {} at frame {} time {:.2f} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
                         if self.writer:
                             image = utils.draw_markers(image.copy(), corners, ids)
         
