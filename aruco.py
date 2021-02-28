@@ -30,19 +30,46 @@ class InteruptableCapture:
                 tag_detector.look_for_marker(next_frame)
 
 class TagDetector:
-    def __init__(self, input_file=None, annotated_file=None, data_file=None, stream=False, preview=False):
+    def __init__(self, input_file=None, annotated_file=None, data_file=None, stream=False, preview=False, videoSource=False, roi=False):
         self.count = 0
         self.input_file = input_file
         self.annotated_file = annotated_file
         self.stream = stream
         self.writer = None
         self.preview = preview
+        self.videoSource = videoSource
+        self.roi = roi
+        self.roi_list = []
+        self.frame_rate = 1
         if self.preview:
             cv2.namedWindow('preview',cv2.WINDOW_AUTOSIZE)
         if data_file:
             self.data_file = open(data_file, "w")
             log.info("Writing csv to {}".format(data_file))
             self.data_file.write("#id,frame_idx,wallclock\n".format(id, self.count, getCurrentTime()))
+        if videoSource:
+            self._set_video_capture_source()
+        if roi:
+            self._set_roi()
+    
+    def _set_roi(self):
+        img = self.get_next_frame()
+        print(img.shape)
+        new_roi = cv2.selectROI("selectRoi", img)
+        cv2.destroyWindow('selectRoi')
+        self.roi_list.append(new_roi)
+        print(self.roi_list[0][3])
+
+    def _check_marker_in_roi(self, midpoint):
+        for roi in self.roi_list:
+            x_inside = midpoint[0] <= roi[2] and midpoint[0] >= roi[0]
+            y_inside = midpoint[1] <= roi[3] and midpoint[1] >= roi[1]
+
+            if x_inside and y_inside:
+                return True
+
+        return False
+
 
     def read_marker(self, display_duration=5000):
         frame  =  cv2.imread(self.input_file)
@@ -53,11 +80,14 @@ class TagDetector:
         cv2.waitKey(display_duration)
 
     def get_next_frame(self):
+        if not self.videoSource:
+            return cv2.imread(self.input_file)
+
         if not self.cap.isOpened():
             return None
+
         ret,frame = self.cap.read()
         return frame
-
 
     def look_for_marker(self, image):
         self.count += 1
@@ -69,12 +99,17 @@ class TagDetector:
             if self.data_file:
                 for idx, id in enumerate(ids):
                     midpoint = utils.get_corner_midpoint(corners[idx])
-                    log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
-                    self.data_file.write("{},{},{},{},{}\n".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
-            if self.writer:
-                image = utils.draw_markers(image.copy(), corners, ids)
+                    if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
+                        log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, self.frame_rate * self.count, midpoint[0], midpoint[1]))
+                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, getCurrentTime(), midpoint[0], midpoint[1]))
+                        if self.writer:
+                            image = utils.draw_markers(image.copy(), corners, ids)
         
         if self.writer:
+            if len(self.roi_list) > 0:
+                for roi in self.roi_list:
+                    red = (255,0,0)
+                    cv2.rectangle(image, roi, red)
             self.writer.write(image.copy().astype('uint8'))
 
         if self.preview:
@@ -90,16 +125,17 @@ class TagDetector:
             log.info("Writing to {}".format(self.annotated_file))
             self.writer = cv2.VideoWriter(self.annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
 
-    def set_capture_source(self):
+    def _set_video_capture_source(self):
         filename = self.input_file
         self.cap = cv2.VideoCapture(filename)
         if self.stream:
             log.info("Streaming from computer video capture")
             self.cap = cv2.VideoCapture(0)
+        self.frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
+        print("The frame rate is: " + str(self.frame_rate ))
 
 
     def get_time_from_video(self):
-        self.set_capture_source()
         self.init_writer()
         capture_loop = InteruptableCapture()
         capture_loop.capture(self)

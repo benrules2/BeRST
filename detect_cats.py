@@ -20,14 +20,14 @@ def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotat
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Track your pets.')
-    parser.add_argument('-v', action='store_true', default=False)
-    parser.add_argument('-i', action='store_true', default=False)
+    parser.add_argument('-v', action='store_true', help="Expect video", default=False)
+    parser.add_argument('-i', action='store_true', help="Expect images", default=False)
     parser.add_argument('--stream', help = "Stream from your webcam", action='store_true', default=False)
     parser.add_argument('--preview', help = "Watch results in preview window", action='store_true',default=False)
     parser.add_argument('-f', help = "Filename to track", default=None)
     parser.add_argument('-o', help = "Output csv file", default=None)
-    parser.add_argument('--annotate', help = "Draw detections onto input and save", 
-    action='store_true',  default=False)
+    parser.add_argument('--annotate', help = "Draw detections onto input and save",  action='store_true',  default=False)
+    parser.add_argument('--roi', action='store_true', help="Set Regions of Interest for tracking", default=False)
 
     args = parser.parse_args()
 
@@ -47,17 +47,18 @@ if __name__ == '__main__':
         annotated_file=outfile_annotated, 
         data_file=outfile_data, 
         stream=args.stream,
-        preview=args.preview
+        preview=args.preview,
+        videoSource=args.v,
+        roi=args.roi
         )
 
     if args.i:
         log.info("Image mode selected. Looking for markers in {}".format(args.f))
         detector.read_marker()
 
-    elif args.v and not args.stream:
-        log.info("Video mode selected. Looking for markers in {}".format(args.f))
-        detector.get_time_from_video()
-        
-    elif args.stream:
-        log.info("Streaming mode selected, using computer webcam.")
+    elif args.v:
+        if not args.stream:
+            log.info("Video mode selected. Looking for markers in {}".format(args.f))
+        else:
+            log.info("Streaming mode selected, using computer webcam.")
         detector.get_time_from_video()
