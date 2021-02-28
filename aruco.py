@@ -46,7 +46,7 @@ class TagDetector:
         if data_file:
             self.data_file = open(data_file, "w")
             log.info("Writing csv to {}".format(data_file))
-            self.data_file.write("#id,frame_idx,wallclock\n".format(id, self.count, getCurrentTime()))
+            self.data_file.write("#id,frame_idx,timestamp\n".format(id, self.count, getCurrentTime()))
         if videoSource:
             self._set_video_capture_source()
         if roi:
