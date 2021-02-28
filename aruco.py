@@ -105,7 +105,7 @@ class TagDetector:
                     if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
                         timestamp = float(self.count / self.frame_rate)
                         log.info("Detected id {} at frame {} time {:.2f} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                        self.data_file.write("{},{},{:.2f},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
                         if self.writer:
                             image = utils.draw_markers(image.copy(), corners, ids)
         
