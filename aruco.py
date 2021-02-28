@@ -126,6 +126,7 @@ class TagDetector:
         if self.annotated_file and self.writer is None:
             ret,frame = self.cap.read()
             height, width, channels = frame.shape
+            log.info("Video file has height: {} width: {}".format(height, width))
             log.info("Writing to {}".format(self.annotated_file))
             self.writer = cv2.VideoWriter(self.annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
 
