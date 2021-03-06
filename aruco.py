@@ -81,6 +81,8 @@ class TagDetector:
         cv2.imwrite(self.input_file.split(".")[0]+'marked.jpg', image)
         cv2.imshow("image", image)
         cv2.waitKey(display_duration)
+        cv2.destroyWindow('image')
+
 
     def get_next_frame(self):
         if not self.videoSource:
