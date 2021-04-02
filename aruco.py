@@ -73,7 +73,6 @@ class TagDetector:
 
         return False
 
-
     def read_marker(self, display_duration=5000):
         frame  =  cv2.imread(self.input_file)
         corners, ids, rejectedImgPoints = self.look_for_marker(frame)
@@ -82,7 +81,6 @@ class TagDetector:
         cv2.imshow("image", image)
         cv2.waitKey(display_duration)
         cv2.destroyWindow('image')
-
 
     def get_next_frame(self):
         if not self.videoSource:
@@ -94,12 +92,7 @@ class TagDetector:
         ret,frame = self.cap.read()
         return frame
 
-    def look_for_marker(self, image):
-        self.count += 1
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        parameters =  aruco.DetectorParameters_create()
-        corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-
+    def _record_positive_matches(self, image, corners, ids, rejectedImgPoints):
         if ids is not None:
             if self.data_file:
                 for idx, id in enumerate(ids):
@@ -114,7 +107,7 @@ class TagDetector:
         if self.writer:
             if len(self.roi_list) > 0:
                 for roi in self.roi_list:
-                    red = (255,0,0)
+                    red = (int(255),int(0),int(0))
                     cv2.rectangle(image, roi, red)
             self.writer.write(image.copy().astype('uint8'))
 
@@ -122,6 +115,12 @@ class TagDetector:
             cv2.imshow("preview", image)
             cv2.waitKey(10)
 
+    def look_for_marker(self, image):
+        self.count += 1
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        parameters =  aruco.DetectorParameters_create()
+        corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+        self._record_positive_matches(image, corners, ids, rejectedImgPoints)
         return corners, ids, rejectedImgPoints
 
     def init_writer(self):
@@ -147,7 +146,8 @@ class TagDetector:
         capture_loop = InteruptableCapture()
         capture_loop.capture(self)
         log.info("Cleaning up writer and capture")
-        self.writer.release()
+        if self.writer:
+            self.writer.release()
         self.cap.release()
         self.data_file.close()
         cv2.destroyAllWindows()

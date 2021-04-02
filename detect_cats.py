@@ -16,7 +16,13 @@ def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotat
         filename = 'output.'
     log.info("Filename {}".format(filename))
     filename = filename.split(".")
-    return filename[0] + extension, filename[0] + image_extention
+
+    annoted_video_output = None
+    
+    if args.annotate:
+        annoted_video_output = filename[0] + image_extention
+
+    return filename[0] + extension, annoted_video_output
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Track your pets.')
