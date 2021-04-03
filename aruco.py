@@ -97,22 +97,20 @@ class TagDetector:
         return frame
 
     def _record_positive_matches(self, image, corners, ids, rejectedImgPoints):
-        if ids is not None:
-            if self.data_file:
+        if self.data_file and self.auto_logger:
+            self.data_file = self.auto_logger.get_log_file()
 
-                if self.auto_logger:
-                    self.data_file = self.auto_logger.get_log_file()
-
-                for idx, id in enumerate(ids):
-                    midpoint = utils.get_corner_midpoint(corners[idx])
-                    if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
-                        timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
-                        if self.stream:
-                            timestamp = getCurrentTime()
-                        log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                        if self.writer:
-                            image = utils.draw_markers(image.copy(), corners, ids)
+        if ids is not None and self.data_file:
+            for idx, id in enumerate(ids):
+                midpoint = utils.get_corner_midpoint(corners[idx])
+                if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
+                    timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
+                    if self.stream:
+                        timestamp = getCurrentTime()
+                    log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                    self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                    if self.writer:
+                        image = utils.draw_markers(image.copy(), corners, ids)
         
         if self.writer:
             if len(self.roi_list) > 0:

@@ -8,10 +8,11 @@ import os
 
 def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotated_img='.jpg'):
     image_extention = annotated
-    if(args.i):
+
+    if args.i:
         image_extention = annotated_img
-    if args.f:
-        filename = os.path.basename(args.f)
+    if args.o:
+        filename = os.path.basename(args.o)
     else:
         filename = 'output.'
     log.info("Filename {}".format(filename))
@@ -34,7 +35,6 @@ if __name__ == '__main__':
     parser.add_argument('-o', help = "Output csv file", default=None)
     parser.add_argument('--annotate', help = "Draw detections onto input and save",  action='store_true',  default=False)
     parser.add_argument('--roi', action='store_true', help="Set Regions of Interest for tracking", default=False)
-
     args = parser.parse_args()
 
     if not args.stream and (args.i or args.v) and args.f == None:
