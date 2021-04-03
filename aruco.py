@@ -1,12 +1,12 @@
 import sys
 import threading as th
-from datetime import datetime
 import log
 import argparse
-
+import auto_logger
 import cv2
 import cv_utils as utils
 from cv2 import aruco
+from utils import getCurrentTime
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
@@ -41,12 +41,17 @@ class TagDetector:
         self.roi = roi
         self.roi_list = []
         self.frame_rate = 1
+        self.auto_logger = None
         if self.preview:
             cv2.namedWindow('preview',cv2.WINDOW_AUTOSIZE)
-        if data_file:
+        if data_file == "auto.csv":
+            self.auto_logger = auto_logger.AutoLogger()
+            self.data_file = self.auto_logger.get_log_file()
+        elif data_file:        
             self.data_file = open(data_file, "w")
             log.info("Writing csv to {}".format(data_file))
             self.data_file.write("#id,frame_idx,timestamp\n".format(id, self.count, getCurrentTime()))
+        
         if videoSource:
             self._set_video_capture_source()
         if roi:
@@ -61,7 +66,6 @@ class TagDetector:
         print(self.roi_list[0][3])
 
     def _check_marker_in_roi(self, midpoint):
-
         # to judge a point(x0,y0) is in the rectangle, just to check if a < x0 < a+c and b < y0 < b + d
         # ROI is top left coordinate, and width and height
         for roi in self.roi_list:
@@ -95,12 +99,18 @@ class TagDetector:
     def _record_positive_matches(self, image, corners, ids, rejectedImgPoints):
         if ids is not None:
             if self.data_file:
+
+                if self.auto_logger:
+                    self.data_file = self.auto_logger.get_log_file()
+
                 for idx, id in enumerate(ids):
                     midpoint = utils.get_corner_midpoint(corners[idx])
                     if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
-                        timestamp = float(self.count / self.frame_rate)
-                        log.info("Detected id {} at frame {} time {:.2f} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                        self.data_file.write("{},{},{:.2f},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                        timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
+                        if self.stream:
+                            timestamp = getCurrentTime()
+                        log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                        self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
                         if self.writer:
                             image = utils.draw_markers(image.copy(), corners, ids)
         
@@ -140,7 +150,6 @@ class TagDetector:
         self.frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
         print("The frame rate is: " + str(self.frame_rate ))
 
-
     def get_time_from_video(self):
         self.init_writer()
         capture_loop = InteruptableCapture()
@@ -152,27 +161,7 @@ class TagDetector:
         self.data_file.close()
         cv2.destroyAllWindows()
 
-def getCurrentTime():
-    now = datetime.now()
-    return now.strftime("%d/%m/%Y %H:%M:%S")
-
 def gen_marker(filename="marker", id=0):
     output = "_markers/{}_{}.jpg".format(filename, id)
     img = aruco.drawMarker(aruco_dict, id, 4*4*10)
     cv2.imwrite(output, img)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Track your pets.')
-    parser.add_argument('--generate')
-    parser.add_argument('--type', help = "Track from video")
-    parser.add_argument('-f', help = "Filename to track")
-    args = parser.parse_args()
-
-    if args.generate is not None:
-        for i in range(0,15):
-            gen_marker(id=i)
-    elif args.type == 'v':
-        get_time_from_video(args.f)
-    else:
-        read_marker(args.f)
