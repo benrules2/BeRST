@@ -145,6 +145,9 @@ class TagDetector:
         if self.stream:
             log.info("Streaming from computer video capture")
             self.cap = cv2.VideoCapture(0)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            
         self.frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
         print("The frame rate is: " + str(self.frame_rate ))
 

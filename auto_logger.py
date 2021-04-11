@@ -27,10 +27,10 @@ class AutoLogger:
                 self.data_file.close()
 
             if os.path.exists(name):
-                self.data_file = open(name, 'a')
+                self.data_file = open(name, 'a', buffering=1)
                 log.info("Appending output {} {}".format(name, self.log_name))
             else:
-                self.data_file = open(name, 'w')
+                self.data_file = open(name, 'w', buffering=1)
                 log.info("Initializing output {} {}".format(name, self.log_name))
                 self.data_file.write("#id,frame_idx,timestamp\n")
             self.log_name = local_name

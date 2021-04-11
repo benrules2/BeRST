@@ -15,3 +15,4 @@ cd cateye
 python3 -m pip install -r requirements.txt
 
 ./detect_cats.py -v --annotate -f ../CatTracking/images/rupert_hd.mov --preview   
+
