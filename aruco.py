@@ -1,33 +1,15 @@
 import sys
-import threading as th
-import log
 import argparse
 import auto_logger
+import log
 import cv2
 import cv_utils as utils
 from cv2 import aruco
 from utils import getCurrentTime
 
+from capture.interuptable import InteruptableCapture
+
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-
-class InteruptableCapture:
-    def __init__(self):
-        self.keep_going = True
-
-    def key_capture_thread(self):
-         while self.keep_going:
-            key = input()
-            self.keep_going = False   
-
-    def capture(self, tag_detector):
-        th.Thread(target=self.key_capture_thread, args=(), name='key_capture_thread', daemon=True).start()
-        log.info("Press enter to terminate capture")
-        while self.keep_going:
-            next_frame = tag_detector.get_next_frame()
-            if next_frame is None:
-                break
-            else:
-                tag_detector.look_for_marker(next_frame)
 
 class TagDetector:
     def __init__(self, input_file=None, annotated_file=None, data_file=None, stream=False, preview=False, videoSource=False, roi=False):
@@ -44,16 +26,11 @@ class TagDetector:
         self.auto_logger = None
         if self.preview:
             cv2.namedWindow('preview',cv2.WINDOW_AUTOSIZE)
-        if data_file == "auto.csv":
-            self.auto_logger = auto_logger.AutoLogger()
-            self.data_file = self.auto_logger.get_log_file()
-        elif data_file:        
-            self.data_file = open(data_file, "w")
-            log.info("Writing csv to {}".format(data_file))
-            self.data_file.write("#id,frame_idx,timestamp\n".format(id, self.count, getCurrentTime()))
+        
+        self.data_logger = auto_logger.AutoLogger(custom_data_file=data_file)
         
         if videoSource:
-            self._set_video_capture_source()
+            self._init_video_capture_source()
         if roi:
             self._set_roi()
     
@@ -97,12 +74,14 @@ class TagDetector:
         return frame
 
     def _record_positive_matches(self, image, corners, ids, rejectedImgPoints):
-        if self.data_file and self.auto_logger:
-            self.data_file = self.auto_logger.get_log_file()
+        self.data_file = self.data_logger.get_log_file()
+        
+        if not self.data_file:
+            log.error("No output file found")
 
-        if ids is not None and self.data_file:
+        if ids is not None:
             for idx, id in enumerate(ids):
-                midpoint = utils.get_corner_midpoint(corners[idx])
+                midpoint = utils.get_midpoint_from_corners(corners[idx])
                 if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
                     timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
                     if self.stream:
@@ -131,35 +110,40 @@ class TagDetector:
         self._record_positive_matches(image, corners, ids, rejectedImgPoints)
         return corners, ids, rejectedImgPoints
 
-    def init_writer(self):
+    def _init_annotated_video_writer(self):
         if self.annotated_file and self.writer is None:
+            log.info("Init video output")
             ret,frame = self.cap.read()
             height, width, channels = frame.shape
             log.info("Video file has height: {} width: {}".format(height, width))
             log.info("Writing to {}".format(self.annotated_file))
             self.writer = cv2.VideoWriter(self.annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
 
-    def _set_video_capture_source(self):
-        filename = self.input_file
-        self.cap = cv2.VideoCapture(filename)
-        if self.stream:
-            log.info("Streaming from computer video capture")
+    def _init_video_capture_source(self):
+        log.info("Initializing video capture source")
+        if self.input_file:
+            filename = self.input_file
+            log.info("Streaming from input file: " + filename)
+            self.cap = cv2.VideoCapture(filename)
+        elif self.stream:
+            log.info("Streaming from webcam")
             self.cap = cv2.VideoCapture(0)
+            #warm up the camera for 30 frames to let lighting adjust
+            for i in range(0,30):
+                self.get_next_frame()
         self.frame_rate = int(self.cap.get(cv2.CAP_PROP_FPS))
         print("The frame rate is: " + str(self.frame_rate ))
 
-    def get_time_from_video(self):
-        self.init_writer()
+    def record_detections(self):
+        self._init_annotated_video_writer()
         capture_loop = InteruptableCapture()
+
+        #Blocking call to capture, returns on exit
         capture_loop.capture(self)
-        log.info("Cleaning up writer and capture")
+
+        log.info(" Capture ended -cleaning up writer and capture")
         if self.writer:
             self.writer.release()
         self.cap.release()
         self.data_file.close()
         cv2.destroyAllWindows()
-
-def gen_marker(filename="marker", id=0):
-    output = "_markers/{}_{}.jpg".format(filename, id)
-    img = aruco.drawMarker(aruco_dict, id, 4*4*10)
-    cv2.imwrite(output, img)

@@ -7,23 +7,28 @@ import sys
 import os
 
 def get_output_filename(args, extension='.csv', annotated='_marked.avi', annotated_img='.jpg'):
-    image_extention = annotated
+    image_extension = annotated
+    output_csv = None
 
     if args.i:
-        image_extention = annotated_img
+        #if image input exists, use image extension, otherwise use video
+        image_extension = annotated_img
+    
+    filename = None
     if args.o:
         filename = os.path.basename(args.o)
-    else:
-        filename = 'output.'
-    log.info("Filename {}".format(filename))
-    filename = filename.split(".")
-
-    annoted_video_output = None
+        log.info("Filename {}".format(filename))
+        output_csv = filename.split(".")[0] + extension
     
+    annoted_video_output = None
     if args.annotate:
-        annoted_video_output = filename[0] + image_extention
-
-    return filename[0] + extension, annoted_video_output
+        if filename:
+            filename = filename.split(".")
+            annoted_video_output = filename[0] + image_extension
+        else:
+            annoted_video_output = "annotated_output" + image_extension
+  
+    return output_csv, annoted_video_output
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Track your pets.')
@@ -67,4 +72,4 @@ if __name__ == '__main__':
             log.info("Video mode selected. Looking for markers in {}".format(args.f))
         else:
             log.info("Streaming mode selected, using computer webcam.")
-        detector.get_time_from_video()
+        detector.record_detections()
