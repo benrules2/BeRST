@@ -8,6 +8,7 @@ from cv2 import aruco
 from utils import getCurrentTime
 
 from capture.interuptable import InteruptableCapture
+from capture.roi import ROI
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
@@ -17,7 +18,7 @@ class TagDetector:
         self.input_file = input_file
         self.annotated_file = annotated_file
         self.stream = stream
-        self.writer = None
+        self.image_writer = None
         self.preview = preview
         self.videoSource = videoSource
         self.roi = roi
@@ -35,23 +36,22 @@ class TagDetector:
             self._set_roi()
     
     def _set_roi(self):
+        key = "Y"
+        id = 0
         img = self.get_next_frame()
-        print(img.shape)
-        new_roi = cv2.selectROI("selectRoi", img)
+        new_rois = cv2.selectROIs("selectRoi", img)
         cv2.destroyWindow('selectRoi')
-        self.roi_list.append(new_roi)
-        print(self.roi_list[0][3])
+        for new_roi in new_rois:
+            roi = ROI(new_roi, id)
+            self.roi_list.append(roi)
+            id+=1
 
     def _check_marker_in_roi(self, midpoint):
         # to judge a point(x0,y0) is in the rectangle, just to check if a < x0 < a+c and b < y0 < b + d
         # ROI is top left coordinate, and width and height
         for roi in self.roi_list:
-            x_inside = midpoint[0] >= roi[0] and midpoint[0] <= roi[0] + roi[2]
-            y_inside = midpoint[1] >= roi[1] and midpoint[1] <= roi[0] + roi[3]
-
-            if x_inside and y_inside:
+            if roi.check_if_coords_in_region(midpoint):
                 return True
-
         return False
 
     def read_marker(self, display_duration=5000):
@@ -81,24 +81,22 @@ class TagDetector:
 
         if ids is not None:
             for idx, id in enumerate(ids):
-                midpoint = utils.get_midpoint_from_corners(corners[idx])
+                midpoint = utils.get_midpoint_from_corners(corners[idx][0])
                 if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
                     timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
                     if self.stream:
                         timestamp = getCurrentTime()
                     log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
                     self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                    if self.writer:
-                        image = utils.draw_markers(image.copy(), corners, ids)
+                    if self.image_writer:
+                        image = utils.draw_marker(image.copy(), corners[idx], idx)
         
-        if self.writer:
+        if self.image_writer:
             if len(self.roi_list) > 0:
                 for roi in self.roi_list:
-                    red = (255,0,0)
-                    top_left = (roi[0], roi[1])
-                    bottom_right = (roi[0] + roi[2], roi[1] + roi[3])
-                    cv2.rectangle(image, top_left, bottom_right, red)
-            self.writer.write(image.copy().astype('uint8'))
+                    red = (255,255,0)
+                    cv2.rectangle(image, roi.top_left, roi.bottom_right, red)
+            self.image_writer.write(image.copy().astype('uint8'))
 
         if self.preview:
             cv2.imshow("preview", image)
@@ -113,13 +111,13 @@ class TagDetector:
         return corners, ids, rejectedImgPoints
 
     def _init_annotated_video_writer(self):
-        if self.annotated_file and self.writer is None:
+        if self.annotated_file and self.image_writer is None:
             log.info("Init video output")
             ret,frame = self.cap.read()
             height, width, channels = frame.shape
             log.info("Video file has height: {} width: {}".format(height, width))
             log.info("Writing to {}".format(self.annotated_file))
-            self.writer = cv2.VideoWriter(self.annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
+            self.image_writer = cv2.VideoWriter(self.annotated_file, cv2.VideoWriter_fourcc('M','J','P','G'), 24, (width, height))
 
     def _init_video_capture_source(self):
         log.info("Initializing video capture source")
@@ -149,8 +147,8 @@ class TagDetector:
         capture_loop.capture(self)
 
         log.info(" Capture ended -cleaning up writer and capture")
-        if self.writer:
-            self.writer.release()
+        if self.image_writer:
+            self.image_writer.release()
         self.cap.release()
         self.data_file.close()
         cv2.destroyAllWindows()

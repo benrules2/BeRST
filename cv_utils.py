@@ -3,7 +3,8 @@ import log
 import random
 
 def get_midpoint_from_corners(corners):
-    return (corners[:, 0].mean(), corners[:, 1].mean())
+    midpoint = (corners[:, 0].mean(), corners[:, 1].mean())
+    return midpoint
 
 def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
     corners = corners[0]
