@@ -94,8 +94,10 @@ class TagDetector:
         if self.writer:
             if len(self.roi_list) > 0:
                 for roi in self.roi_list:
-                    red = (int(255),int(0),int(0))
-                    cv2.rectangle(image, roi, red)
+                    red = (255,0,0)
+                    top_left = (roi[0], roi[1])
+                    bottom_right = (roi[0] + roi[2], roi[1] + roi[3])
+                    cv2.rectangle(image, top_left, bottom_right, red)
             self.writer.write(image.copy().astype('uint8'))
 
         if self.preview:
