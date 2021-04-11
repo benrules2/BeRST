@@ -7,3 +7,4 @@ def getCurrentTime():
 def getCurrentDay():
     now = datetime.now()
     return now.strftime("%d_%m_%Y")
+    

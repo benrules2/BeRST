@@ -2,7 +2,7 @@ import cv2
 import log
 import random
 
-def get_corner_midpoint(corners):
+def get_midpoint_from_corners(corners):
     return (corners[:, 0].mean(), corners[:, 1].mean())
 
 def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
@@ -17,7 +17,7 @@ def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
     cv2.line(image, tuple(corners[2]), tuple(corners[3]), colour, thickness)
     cv2.line(image, tuple(corners[3]), tuple(corners[0]), colour, thickness)
 
-    label_loc = get_corner_midpoint(corners)
+    label_loc = get_midpoint_from_corners(corners)
 
     cv2.putText(image,"id = {}".format(id), label_loc, cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 5, cv2.LINE_4)
     return image
@@ -29,3 +29,9 @@ def draw_markers(image, corners, ids, colour=(255,0,0), thickness=10):
         b = random.randint(r,255)
         image = draw_marker(image, corners[id], id, colour=(r, g, b))
     return image
+
+
+def gen_marker(filename="marker", id=0):
+    output = "_markers/{}_{}.jpg".format(filename, id)
+    img = aruco.drawMarker(aruco_dict, id, 4*4*10)
+    cv2.imwrite(output, img)
