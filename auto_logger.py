@@ -2,8 +2,6 @@ import utils
 import os
 import log
 
-from google.cloud import storage
-
 class AutoLogger:
     def __init__(self, custom_data_file = None):
         #TODO - add proper cli parser arguments for this instead of environment variable
