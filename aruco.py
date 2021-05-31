@@ -88,13 +88,16 @@ class TagDetector:
             midpoint = utils.get_midpoint_from_corners(corners[idx][0])
             roi_idx = self._get_roi_detection_index(midpoint)
             if len(self.roi_list) == 0 or roi_idx >=0:
-                timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
+                timestamp = 0
                 if self.stream:
                     timestamp = getCurrentTime()
+                else: 
+                    timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
+
                 log.info("Detected id {} at frame {} time {} x {} y {} roi {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1], roi_idx))
                 self.data_file.write("{},{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1], roi_idx))
 
-        self.prepare_detections_output(image, corners)
+        self.prepare_detections_output(image, corners, ids)
 
     def _draw_roi(self, image):
         for roi in self.roi_list:
@@ -102,12 +105,12 @@ class TagDetector:
             cv2.rectangle(image, roi.top_left, roi.bottom_right, red)     
         return image
 
-    def prepare_detections_output(self, image, corners):
+    def prepare_detections_output(self, image, corners, ids):
         if self.image_writer:    
             #draw markers
             if corners:
                 for idx, corner in enumerate(corners):
-                    image = utils.draw_marker(image.copy(), corner, idx)                
+                    image = utils.draw_marker(image.copy(), corner, ids[idx])                
             image = self._draw_roi(image)
             self.image_writer.write(image.copy().astype('uint8'))
 
