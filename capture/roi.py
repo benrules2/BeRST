@@ -1,7 +1,7 @@
 import log
 
 class ROI:
-    def __init__(self, parameters : tuple, id):
+    def __init__(self, parameters : tuple, id=None):
         self.parameters = parameters
         self.top_left = (parameters[0], parameters[1])
         self.width = parameters[2]
@@ -9,6 +9,7 @@ class ROI:
         self.bottom_right = (parameters[0] + self.width, parameters[1] + self.height)
         self._report_corners_and_dimensions()
         self.roi = parameters
+        self.id = id
     
     def check_if_coords_in_region(self, coords):        
         x_inside = coords[0] >= self.top_left[0] and coords[0] <= self.bottom_right[0] 

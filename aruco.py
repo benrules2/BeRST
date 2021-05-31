@@ -47,13 +47,13 @@ class TagDetector:
             self.roi_list.append(roi)
             id+=1
 
-    def _check_marker_in_roi(self, midpoint):
+    def _get_roi_detection_index(self, midpoint):
         # to judge a point(x0,y0) is in the rectangle, just to check if a < x0 < a+c and b < y0 < b + d
         # ROI is top left coordinate, and width and height
         for roi in self.roi_list:
             if roi.check_if_coords_in_region(midpoint):
-                return True
-        return False
+                return roi.id
+        return -1
 
     def read_marker(self, display_duration=5000):
         frame  =  cv2.imread(self.input_file)
@@ -86,12 +86,13 @@ class TagDetector:
   
         for idx, id in enumerate(ids):
             midpoint = utils.get_midpoint_from_corners(corners[idx][0])
-            if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
+            roi_idx = self._get_roi_detection_index(midpoint)
+            if len(self.roi_list) == 0 or roi_idx >=0:
                 timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
                 if self.stream:
                     timestamp = getCurrentTime()
-                log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                log.info("Detected id {} at frame {} time {} x {} y {} roi {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1], roi_idx))
+                self.data_file.write("{},{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1], roi_idx))
 
         self.prepare_detections_output(image, corners)
 
@@ -123,6 +124,9 @@ class TagDetector:
             cv2.waitKey(10)
 
     def look_for_marker(self, image):
+        if self.count > 30 * 60 * 24:
+            #Reset count to 0 for videos longer than 1 day
+            self.count = 0
         self.count += 1
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         parameters =  aruco.DetectorParameters_create()
