@@ -25,8 +25,8 @@ class AutoLogger:
         if self.custom_data_file:
             local_name = self.custom_data_file
         else:
-            date = utils.getCurrentDay()
-            local_name = "cateye_" + date + ".csv"
+            logtime = utils.getDayMonthYearHour()
+            local_name = "cateye_" + logtime + ".csv"
 
         name = os.path.join(self.log_dir, local_name)
 

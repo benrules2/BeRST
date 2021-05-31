@@ -1,5 +1,6 @@
 import sys
 import argparse
+from types import prepare_class
 import auto_logger
 import log
 import cv2
@@ -73,31 +74,50 @@ class TagDetector:
         ret,frame = self.cap.read()
         return frame
 
-    def _record_positive_matches(self, image, corners, ids, rejectedImgPoints):
+    def process_detected_markers(self, image, corners, ids, rejectedImgPoints):
         self.data_file = self.data_logger.get_log_file()
         
         if not self.data_file:
             log.error("No output file found")
 
-        if ids is not None:
-            for idx, id in enumerate(ids):
-                midpoint = utils.get_midpoint_from_corners(corners[idx][0])
-                if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
-                    timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
-                    if self.stream:
-                        timestamp = getCurrentTime()
-                    log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                    self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
-                    if self.image_writer:
-                        image = utils.draw_marker(image.copy(), corners[idx], idx)
-        
-        if self.image_writer:
-            if len(self.roi_list) > 0:
-                for roi in self.roi_list:
-                    red = (255,255,0)
-                    cv2.rectangle(image, roi.top_left, roi.bottom_right, red)
+        if ids is None:
+            self.prepare_no_detections_output(image)
+            return
+  
+        for idx, id in enumerate(ids):
+            midpoint = utils.get_midpoint_from_corners(corners[idx][0])
+            if len(self.roi_list) == 0 or self._check_marker_in_roi(midpoint):
+                timestamp = "{:.2f}".format(float(self.count / self.frame_rate))
+                if self.stream:
+                    timestamp = getCurrentTime()
+                log.info("Detected id {} at frame {} time {} x {} y {} ".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+                self.data_file.write("{},{},{},{},{}\n".format(id, self.count, timestamp, midpoint[0], midpoint[1]))
+
+        self.prepare_detections_output(image, corners)
+
+    def _draw_roi(self, image):
+        for roi in self.roi_list:
+            red = (255,255,0)
+            cv2.rectangle(image, roi.top_left, roi.bottom_right, red)     
+        return image
+
+    def prepare_detections_output(self, image, corners):
+        if self.image_writer:    
+            #draw markers
+            if corners:
+                for idx, corner in enumerate(corners):
+                    image = utils.draw_marker(image.copy(), corner, idx)                
+            image = self._draw_roi(image)
             self.image_writer.write(image.copy().astype('uint8'))
 
+        if self.preview:
+            cv2.imshow("preview", image)
+            cv2.waitKey(10)
+
+    def prepare_no_detections_output(self, image):
+        image = self._draw_roi(image)
+        if self.image_writer:
+            self.image_writer.write(image.copy().astype('uint8'))
         if self.preview:
             cv2.imshow("preview", image)
             cv2.waitKey(10)
@@ -107,7 +127,7 @@ class TagDetector:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         parameters =  aruco.DetectorParameters_create()
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-        self._record_positive_matches(image, corners, ids, rejectedImgPoints)
+        self.process_detected_markers(image, corners, ids, rejectedImgPoints)
         return corners, ids, rejectedImgPoints
 
     def _init_annotated_video_writer(self):
