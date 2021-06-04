@@ -1,21 +1,32 @@
 import utils 
 import os
 import log
+import json
 
 class AutoLogger:
     def __init__(self, custom_data_file = None):
-        #TODO - add proper cli parser arguments for this instead of environment variable
-        remote = os.getenv('CATEYE_BACKUP')
+        #TODO - add proper cli parser arguments for this instead of environment variable)
+        
+        if os.path.exists("remote_config.json"):
+            conf = open("remote_config.json", 'r')
+            config = json.load(conf)
+            remote = os.path.join(config['backup_dir'], config['computer_id'])    
+        elif os.environ("CATEYE_BACKUP"):
+            remote = os.environ("CATEYE_BACKUP")
+        
         if remote is None:
             log.error("Empty CATEYE_BACKUP env - writing to log folder locally")
             remote = "log"
+
         self.log_dir = remote
         self.log_name = None
         self.data_file = None
         self.custom_data_file = None
+        
         if custom_data_file:
             self.custom_data_file = custom_data_file
             log.info("User specified output file provided, logging to " + self.custom_data_file)
+        
         if not os.path.isdir(self.log_dir):
             os.mkdir(self.log_dir)
         
