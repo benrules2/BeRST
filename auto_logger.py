@@ -10,7 +10,10 @@ class AutoLogger:
         if os.path.exists("remote_config.json"):
             conf = open("remote_config.json", 'r')
             config = json.load(conf)
-            remote = os.path.join(config['backup_dir'], config['computer_id'])    
+            remote = os.path.join(config['backup_dir'], config['computer_id'])
+            log.info("Attemping to mounting OneDrive:cateye to {}".format(remote))
+            os.system("rclone mount cateye:cateye {} --allow-non-empty --vfs-cache-mode writes".format(remote))
+
         elif os.environ("CATEYE_BACKUP"):
             remote = os.environ("CATEYE_BACKUP")
         
