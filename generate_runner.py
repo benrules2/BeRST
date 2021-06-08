@@ -17,14 +17,13 @@ if __name__ == "__main__":
     print("ID: " + id)
 
     while backup_dir == None:
-        backup_dir = input("Please enter the backup directory location, or press enter for default")
+        backup_dir = input("Please enter the backup directory location, or press enter for default: ")
         if len(backup_dir) == 0:
             backup_dir = "cateye_onedrive"
-            if not os.path.exists(backup_dir):
-                os.mkdir(backup_dir)
-        backup_dir = os.path.abspath(backup_dir)    
-        if not os.path.exists(backup_dir):
-            os.path.mkdirs(backup_dir)
+        backup_dir = os.path.abspath(backup_dir)
+        log_dir = os.path.join(backup_dir, id)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
     print("Backup dir: " + backup_dir)
 

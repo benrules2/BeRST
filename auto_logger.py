@@ -32,7 +32,7 @@ class AutoLogger:
         
         if not os.path.isdir(self.log_dir):
             log.info("Path does not exist, creating {}".format(self.log_dir))
-            os.makedirs(self.log_dir)
+            os.makedirs(os.path.abspath(self.log_dir))
         
     def get_log_file(self):
         local_name = ""
