@@ -31,6 +31,7 @@ class AutoLogger:
             log.info("User specified output file provided, logging to " + self.custom_data_file)
         
         if not os.path.isdir(self.log_dir):
+            log.info("Path does not exist, creating {}".format(self.log_dir))
             os.makedirs(self.log_dir)
         
     def get_log_file(self):

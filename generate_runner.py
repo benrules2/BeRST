@@ -22,10 +22,10 @@ if __name__ == "__main__":
             backup_dir = "cateye_onedrive"
             if not os.path.exists(backup_dir):
                 os.mkdir(backup_dir)
+        backup_dir = os.path.abspath(backup_dir)    
         if not os.path.exists(backup_dir):
-            print("Backup directory does not exist! Try again.")
-            backup_dir = None
-    backup_dir = os.path.abspath(backup_dir)    
+            os.path.mkdirs(backup_dir)
+
     print("Backup dir: " + backup_dir)
 
     # Data to be written
