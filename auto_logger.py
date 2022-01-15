@@ -20,7 +20,7 @@ class AutoLogger:
             raise Exception("Missing Config", "Run 'python3 generate_runner.py' to create remote backup config file")
 
         else:
-            log.info("User specified output file provided, logging to " + self.custom_data_file)
+            log.info("User specified output file provided, logging to " + str(self.custom_data_file))
             remote = "log"
             self.custom_data_file = custom_data_file
 
