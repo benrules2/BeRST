@@ -127,7 +127,8 @@ class TagDetector:
             cv2.waitKey(10)
 
     def look_for_marker(self, image):
-        if self.count > 30 * 60 * 24:
+        #30 fps * 60 (to minutes) * 60 (to hours)  * 24 (to days) == frames per day
+        if self.count > 30 * 60 * 60 * 24:
             #Reset count to 0 for videos longer than 1 day
             self.count = 0
         self.count += 1
