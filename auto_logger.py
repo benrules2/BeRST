@@ -9,20 +9,21 @@ class AutoLogger:
         #TODO - add proper cli parser arguments for this instead of environment variable)
         self.custom_data_file = None
         
-        if os.path.exists(REMOTE_CONFIG):
+        if custom_data_file:
+            log.info("User specified output file provided, logging to " + str(self.custom_data_file))
+            remote = "log"
+            self.custom_data_file = custom_data_file
+        
+        elif os.path.exists(REMOTE_CONFIG):
             conf = open(REMOTE_CONFIG, 'r')
             config = json.load(conf)
             remote = os.path.join(config['backup_dir'], config['computer_id'])
             log.info("Attemping to mounting OneDrive:cateye to {}".format(config['backup_dir']))
             os.system("rclone mount cateye:cateye {} --allow-non-empty --vfs-cache-mode writes --daemon".format(config['backup_dir']))
 
-        elif custom_data_file is None:
+        else:
             raise Exception("Missing Config", "Run 'python3 generate_runner.py' to create remote backup config file")
 
-        else:
-            log.info("User specified output file provided, logging to " + str(self.custom_data_file))
-            remote = "log"
-            self.custom_data_file = custom_data_file
 
         self.log_dir = remote
         self.log_name = None
