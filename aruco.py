@@ -128,6 +128,9 @@ class TagDetector:
 
     def look_for_marker(self, image):
         #30 fps * 60 (to minutes) * 60 (to hours)  * 24 (to days) == frames per day
+        if self.count > 30 * 60 * 60 * 24:
+            #Reset count to 0 for videos longer than 1 day
+            self.count = 0
         self.count += 1
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         parameters =  aruco.DetectorParameters_create()
