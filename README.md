@@ -1,5 +1,6 @@
-# cateye
-Track your cats location using CV
+# Behaviour Real-time Spatial Tracking (BeRST)
+
+Track your cats location using CV and simple fiducial markers.
 
 Install Brew:
 https://brew.sh/
