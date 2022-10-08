@@ -2,18 +2,18 @@
 
 Track your cats location using CV and simple fiducial markers.
 
-Install Brew:
+##Setup
+
+Installing OpenCV:
+- Install OpenCV by following the [installation steps from OpenCV for you platform](https://docs.opencv.org/4.x/df/d65/tutorial_table_of_content_introduction.html)
 https://brew.sh/
 
-Install Git:
-$ brew install git
+- [Python3](https://www.python.org/downloads/) 
+- With python3 and OpenCV installed, you can now install from the requirements file as follows:
 
-brew install opencv
-git clone https://github.com/benrules2/cateye.git
+`python3 -m pip install -r requirements.txt`
 
-cd cateye
+## Getting started
 
-python3 -m pip install -r requirements.txt
-
-./detect_cats.py -v --annotate -f ../CatTracking/images/rupert_hd.mov --preview   
+./detect_cats.py -v --annotate -f ./input/demo.mov --preview   
 
