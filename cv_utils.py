@@ -3,11 +3,11 @@ import log
 import random
 
 def get_midpoint_from_corners(corners):
-    midpoint = (corners[:, 0].mean(), corners[:, 1].mean())
+    midpoint = (int(corners[:, 0].mean()), int(corners[:, 1].mean()))
     return midpoint
 
 def draw_marker(image, corners, id, colour=(255,0,0), thickness=10):
-    corners = corners[0]
+    corners = corners[0].astype('int32')
     if len(corners) < 4:
         log.error("Not enough corners {}".format(len(corners)))
         log.info("Corners: {}".format(corners))
