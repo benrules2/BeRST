@@ -2,7 +2,7 @@
 
 Track your cats location using CV and simple fiducial markers.
 
-##Setup
+## Setup
 
 Installing OpenCV:
 - Install OpenCV by following the [installation steps from OpenCV for you platform](https://docs.opencv.org/4.x/df/d65/tutorial_table_of_content_introduction.html)
