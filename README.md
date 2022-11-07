@@ -15,5 +15,5 @@ https://brew.sh/
 
 ## Getting started
 
-./detect_cats.py -v --annotate -f ./input/demo.mov --preview   
+`./detect_cats.py -v --annotate -f ./input/demo.mov --preview`   
 
